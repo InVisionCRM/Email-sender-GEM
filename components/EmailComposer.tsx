@@ -311,7 +311,7 @@ export const EmailComposer: React.FC<EmailComposerProps> = ({
         <Separator />
 
         {/* Side-by-side layout for HTML editor and live preview */}
-        <div className="flex flex-row gap-4 h-[600px] w-full">
+        <div className="flex flex-row gap-4 h-[1200px] w-full">
           <div className="w-1/2 min-w-0 flex flex-col">
             <Label htmlFor="html-body" className="text-lg font-semibold mb-2 block">HTML Editor</Label>
             <Button variant="outline" size="sm" onClick={() => setShowImgurLibrary(true)} className="mb-2 self-end">
