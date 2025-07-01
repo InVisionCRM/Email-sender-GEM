@@ -1,0 +1,5 @@
+
+{
+  "name": "Resend Email Campaign Builder",
+  "description": "A frontend application to create, preview, and manage HTML email templates for bulk sending, inspired by the Resend API workflow. Includes AI-powered template generation."
+}
