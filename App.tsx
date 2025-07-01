@@ -142,7 +142,7 @@ function App() {
         onClose={handleCloseIntro}
       />
        <footer className="w-full p-4 pb-8 border-t border-white/10 text-xs text-gray-500 shrink-0 bg-gray-900/20">
-        <div className="max-w-7xl mx-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 text-center sm:text-left">
+        <div className="max-w-7xl mx-auto grid grid-cols-5 sm:grid-cols-3 md:grid-cols-5 gap-4 text-center">
             <FooterCategory title="Domains">
                 <FooterLink href="https://namescheap.com">Namecheap</FooterLink>
                 <FooterLink href="https://godaddy.com">GoDaddy</FooterLink>
@@ -161,7 +161,7 @@ function App() {
                 <FooterLink href="https://windsurf.ai">Windsurf</FooterLink>
             </FooterCategory>
             <FooterCategory title="How To">
-                <Button variant="link" className="text-gray-400 p-0 h-auto justify-center sm:justify-start" onClick={handleOpenIntro}>Open Guide</Button>
+                <Button variant="link" className="text-gray-400 p-0 h-auto justify-center md:justify-start" onClick={handleOpenIntro}>Open Guide</Button>
             </FooterCategory>
         </div>
       </footer>

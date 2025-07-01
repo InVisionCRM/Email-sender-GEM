@@ -6,10 +6,11 @@ interface ToastMessage {
   id: number;
   message: string;
   type: ToastType;
+  centered?: boolean;
 }
 
 interface ToastContextType {
-  addToast: (message: string, type: ToastType) => number;
+  addToast: (message: string, type: ToastType, options?: { centered?: boolean }) => number;
   dismiss: (id: number) => void;
 }
 
@@ -21,7 +22,7 @@ export const Toaster: React.FC<{ children: React.ReactNode }> = ({ children }) =
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [loadingToastId, setLoadingToastId] = useState<number | null>(null);
 
-  const addToast = useCallback((message: string, type: ToastType): number => {
+  const addToast = useCallback((message: string, type: ToastType, options?: { centered?: boolean }): number => {
     const id = toastCount++;
     if (type === 'loading') {
       // If there's an active loading toast, remove it first.
@@ -30,7 +31,7 @@ export const Toaster: React.FC<{ children: React.ReactNode }> = ({ children }) =
       }
       setLoadingToastId(id);
     }
-    setToasts(prev => [{ id, message, type }, ...prev]);
+    setToasts(prev => [{ id, message, type, centered: options?.centered }, ...prev]);
     if (type !== 'loading') {
       setTimeout(() => {
         setToasts(prev => prev.filter(t => t.id !== id));
@@ -46,11 +47,19 @@ export const Toaster: React.FC<{ children: React.ReactNode }> = ({ children }) =
       }
   }, [loadingToastId]);
 
+  // Center if the first toast is centered, else top-right
+  const containerClass =
+    toasts.length > 0 && toasts[0].centered
+      ? 'fixed inset-0 z-[100] flex items-center justify-center pointer-events-none'
+      : 'fixed top-0 right-0 z-[100] p-4 space-y-2 pointer-events-none';
+
   return (
     <ToastContext.Provider value={{ addToast, dismiss }}>
-        <div className="fixed top-0 right-0 z-[100] p-4 space-y-2">
+        <div className={containerClass}>
             {toasts.map(toast => (
-                <Toast key={toast.id} {...toast} onDismiss={() => dismiss(toast.id)} />
+                <div key={toast.id} className="pointer-events-auto">
+                  <Toast {...toast} onDismiss={() => dismiss(toast.id)} />
+                </div>
             ))}
         </div>
         {children}
@@ -76,7 +85,7 @@ const Toast: React.FC<ToastMessage & { onDismiss: () => void }> = ({ message, ty
   };
   
   return (
-    <div className="max-w-sm w-full bg-gray-900/80 backdrop-blur-md shadow-lg rounded-lg pointer-events-auto ring-1 ring-white/10 overflow-hidden">
+    <div className="max-w-md min-w-[320px] w-full bg-gray-900/80 backdrop-blur-md shadow-lg rounded-lg pointer-events-auto ring-1 ring-white/10 overflow-hidden">
       <div className="p-4">
         <div className="flex items-start">
           <div className="flex-shrink-0">{icons[type]}</div>
@@ -108,10 +117,10 @@ const ToastProvider: React.FC = () => {
 }
 
 const originalToast = {
-    success: (message: string) => toastApi?.addToast(message, 'success'),
-    error: (message: string) => toastApi?.addToast(message, 'error'),
-    info: (message: string) => toastApi?.addToast(message, 'info'),
-    loading: (message: string) => toastApi?.addToast(message, 'loading'),
+    success: (message: string, options?: { centered?: boolean }) => toastApi?.addToast(message, 'success', options),
+    error: (message: string, options?: { centered?: boolean }) => toastApi?.addToast(message, 'error', options),
+    info: (message: string, options?: { centered?: boolean }) => toastApi?.addToast(message, 'info', options),
+    loading: (message: string, options?: { centered?: boolean }) => toastApi?.addToast(message, 'loading', options),
     dismiss: (id: number) => toastApi?.dismiss(id),
 };
 

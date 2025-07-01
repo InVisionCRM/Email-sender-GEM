@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 import { Button } from './ui/Button';
@@ -12,6 +12,7 @@ import { FileUploadHelpModal } from './FileUploadHelpModal';
 import { Separator } from './ui/Separator';
 import { toast } from './ui/Toaster';
 import { ImgurLibraryModal } from './ImgurLibraryModal';
+import { sendEmail } from '../services/resendService';
 
 interface EmailComposerProps {
   recipients: string;
@@ -67,23 +68,53 @@ export const EmailComposer: React.FC<EmailComposerProps> = ({
 }) => {
   const [isPreviewModalOpen, setPreviewModalOpen] = useState(false);
   const [isFileHelpModalOpen, setFileHelpModalOpen] = useState(false);
-  const [isImgurModalOpen, setImgurModalOpen] = useState(false);
+  const [showImgurLibrary, setShowImgurLibrary] = useState(false);
   const [sendingState, setSendingState] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleSendEmail = useCallback(() => {
+  useEffect(() => {
+    if (showImgurLibrary) {
+      // Remove any existing Imgur embed script
+      const existing = document.getElementById('imgur-embed-script');
+      if (existing) existing.remove();
+      // Inject the Imgur embed script
+      const script = document.createElement('script');
+      script.id = 'imgur-embed-script';
+      script.src = '//s.imgur.com/min/embed.js';
+      script.async = true;
+      script.charset = 'utf-8';
+      document.body.appendChild(script);
+    }
+  }, [showImgurLibrary]);
+
+  const handleSendEmail = useCallback(async () => {
     if (!recipients || !subject || !htmlBody) {
-      toast.error('Please fill in all fields before sending.');
+      toast.error('Please fill in all fields before sending.', { centered: true });
       return;
     }
     setSendingState('sending');
-    const toastId = toast.loading('Sending emails...');
-    setTimeout(() => {
-      setSendingState('success');
-      toast.dismiss(toastId);
-      toast.success(`Email sent to ${recipients.split(',').length} recipients!`);
-      setTimeout(() => setSendingState('idle'), 3000);
-    }, 2000); // Simulate API call
+    const toastId = toast.loading('Sending emails...', { centered: true });
+    const recipientList = recipients.split(',').map(r => r.trim()).filter(Boolean);
+    let successCount = 0;
+    let errorCount = 0;
+    for (const to of recipientList) {
+      try {
+        await sendEmail({ to, subject, html: htmlBody });
+        successCount++;
+      } catch (err) {
+        errorCount++;
+        console.error('Failed to send to', to, err);
+      }
+    }
+    setSendingState('success');
+    toast.dismiss(toastId);
+    if (successCount > 0) {
+      toast.success(`Sent to ${successCount} recipient${successCount > 1 ? 's' : ''}${errorCount > 0 ? `, ${errorCount} failed` : ''}.`, { centered: true });
+    } else {
+      toast.error('Failed to send emails.', { centered: true });
+      setSendingState('error');
+    }
+    setTimeout(() => setSendingState('idle'), 3000);
   }, [recipients, subject, htmlBody]);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -189,18 +220,23 @@ export const EmailComposer: React.FC<EmailComposerProps> = ({
   }, [insertTextAtCursor]);
 
   const handlePasteInEditor = useCallback((e: React.ClipboardEvent<HTMLTextAreaElement>) => {
-    const pastedText = e.clipboardData.getData('text/plain');
-    const imageRegex = /^(https?:\/\/[^\s]+?\.(?:png|jpg|jpeg|gif|webp|svg))$/i;
+    const pastedText = e.clipboardData.getData('text/plain').trim();
+    let imageUrl = pastedText;
 
-    // Check if the pasted text is a valid image URL
-    if (imageRegex.test(pastedText)) {
-      e.preventDefault(); // Stop the default paste action
-      const imageUrl = pastedText;
-      // Create a responsive image tag
+    // Convert Imgur page URL to direct image URL
+    const imgurMatch = imageUrl.match(/^https?:\/\/imgur\.com\/([a-zA-Z0-9]+)$/);
+    if (imgurMatch) {
+      imageUrl = `https://i.imgur.com/${imgurMatch[1]}.jpg`;
+    }
+
+    // If it's any URL, insert as image
+    const urlRegex = /^https?:\/\/[\w\-._~:/?#[\]@!$&'()*+,;=%]+$/i;
+    if (urlRegex.test(imageUrl)) {
+      e.preventDefault();
       const imgTag = `<img src="${imageUrl}" alt="" style="max-width: 100%; height: auto; display: block;" />`;
       insertTextAtCursor(imgTag);
     }
-    // If it's not an image URL, let the default paste action occur
+    // Otherwise, let default paste happen
   }, [insertTextAtCursor]);
 
 
@@ -274,27 +310,43 @@ export const EmailComposer: React.FC<EmailComposerProps> = ({
         
         <Separator />
 
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-[400px]">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-                <Label htmlFor="html-body" className="text-lg font-semibold block">HTML Editor</Label>
-                <Button variant="outline" size="sm" onClick={() => setImgurModalOpen(true)}>
-                    <ImageIcon className="h-4 w-4 mr-2" />
-                    Upload Image
-                </Button>
-            </div>
+        {/* Side-by-side layout for HTML editor and live preview */}
+        <div className="flex flex-row gap-4 h-[600px] w-full">
+          <div className="w-1/2 min-w-0 flex flex-col">
+            <Label htmlFor="html-body" className="text-lg font-semibold mb-2 block">HTML Editor</Label>
+            <Button variant="outline" size="sm" onClick={() => setShowImgurLibrary(true)} className="mb-2 self-end">
+                <ImageIcon className="h-4 w-4 mr-2" />
+                Images
+            </Button>
+            {/* Imgur embed modal */}
+            {showImgurLibrary && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setShowImgurLibrary(false)}>
+                <div className="bg-gray-900/90 border border-white/10 rounded-lg shadow-2xl w-full max-w-md h-96 flex flex-col m-4 relative" onClick={e => e.stopPropagation()}>
+                  <button className="absolute top-2 right-2 text-gray-400 hover:text-white" onClick={() => setShowImgurLibrary(false)} aria-label="Close">&times;</button>
+                  <div className="flex-1 flex flex-col items-center justify-center p-4 overflow-auto">
+                    <div id="imgur-embed-container" className="w-full h-full">
+                      <blockquote className="imgur-embed-pub" lang="en" data-id="a/EHArxOm">
+                        <a href="//imgur.com/a/EHArxOm">HEX STUFF</a>
+                      </blockquote>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             <Textarea
               id="html-body"
-              className="h-full min-h-[400px] font-mono text-sm"
+              className="flex-1 font-mono text-sm"
               placeholder="<html>...</html>"
               value={htmlBody}
               onChange={(e) => setHtmlBody(e.target.value)}
               onPaste={handlePasteInEditor}
             />
           </div>
-          <div>
+          <div className="w-1/2 min-w-0 flex flex-col border-l border-white/10 pl-4">
             <Label className="text-lg font-semibold mb-2 block">Live Preview</Label>
-            <HtmlPreview htmlContent={htmlBody} />
+            <div className="flex-1 overflow-auto">
+              <HtmlPreview htmlContent={htmlBody} />
+            </div>
           </div>
         </div>
       </div>
@@ -308,11 +360,6 @@ export const EmailComposer: React.FC<EmailComposerProps> = ({
       <FileUploadHelpModal
         isOpen={isFileHelpModalOpen}
         onClose={() => setFileHelpModalOpen(false)}
-      />
-      <ImgurLibraryModal
-        isOpen={isImgurModalOpen}
-        onClose={() => setImgurModalOpen(false)}
-        onImageUploaded={handleImageUploaded}
       />
     </>
   );
