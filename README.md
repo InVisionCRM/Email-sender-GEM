@@ -124,4 +124,3 @@ The project is organized to be clean and maintainable.
 4.  **Preview**: Use the "Live Preview" panel on the right to see how your email looks. Click the "Preview" button in the header for a full-modal preview.
 5.  **Save**: Click "Save Template" to save your changes to the currently selected template.
 6.  **(Local Only) Send**: Click "Send Email" to simulate sending. If you've set up your `.env.local` file correctly, this is where you would integrate the Resend API call.
-# Email-sender-GEM
