@@ -1,5 +1,4 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import axios from 'axios';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).end();
@@ -13,13 +12,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    await axios.post(
-      'https://api.resend.com/emails',
-      { from, to, subject, html },
-      { headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' } }
-    );
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ from, to, subject, html }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Resend API error: ${response.status}`);
+    }
+
     res.status(200).json({ success: true });
   } catch (err) {
+    console.error('Error sending email:', err);
     res.status(500).json({ error: 'Failed to send email' });
   }
 } 
