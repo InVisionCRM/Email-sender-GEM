@@ -12,17 +12,21 @@ import { FileUploadHelpModal } from './FileUploadHelpModal';
 import { Separator } from './ui/Separator';
 import { toast } from './ui/Toaster';
 import { ImgurLibraryModal } from './ImgurLibraryModal';
+import { SaveTemplateModal } from './SaveTemplateModal';
 import { sendEmail } from '../services/resendService';
 
 interface EmailComposerProps {
   recipients: string;
   setRecipients: React.Dispatch<React.SetStateAction<string>>;
+  name: string;
+  setName: React.Dispatch<React.SetStateAction<string>>;
   subject: string;
   setSubject: React.Dispatch<React.SetStateAction<string>>;
   htmlBody: string;
   setHtmlBody: React.Dispatch<React.SetStateAction<string>>;
-  onSave: () => void;
+  onSave: (templateName: string) => Promise<void>;
   isTemplateSelected: boolean;
+  storageInfo: { type: 'localStorage' | 'vercel-blob' | 'fallback'; isLocal: boolean };
 }
 
 const UploadIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -56,19 +60,32 @@ const ImageIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
+const SaveIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+        <polyline points="17 21 17 13 7 13 7 21" />
+        <polyline points="7 3 7 8 15 8" />
+    </svg>
+);
+
 export const EmailComposer: React.FC<EmailComposerProps> = ({
   recipients,
   setRecipients,
+  name,
+  setName,
   subject,
   setSubject,
   htmlBody,
   setHtmlBody,
   onSave,
   isTemplateSelected,
+  storageInfo,
 }) => {
   const [isPreviewModalOpen, setPreviewModalOpen] = useState(false);
   const [isFileHelpModalOpen, setFileHelpModalOpen] = useState(false);
   const [showImgurLibrary, setShowImgurLibrary] = useState(false);
+  const [isSaveModalOpen, setSaveModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [sendingState, setSendingState] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -219,6 +236,19 @@ export const EmailComposer: React.FC<EmailComposerProps> = ({
     insertTextAtCursor(imageHtml);
   }, [insertTextAtCursor]);
 
+  const handleSaveTemplate = useCallback(async (templateName: string) => {
+    setIsSaving(true);
+    try {
+      await onSave(templateName);
+      setSaveModalOpen(false);
+      toast.success(`Template "${templateName}" saved successfully!`, { centered: true });
+    } catch (error) {
+      toast.error('Failed to save template. Please try again.', { centered: true });
+    } finally {
+      setIsSaving(false);
+    }
+  }, [onSave]);
+
   const handlePasteInEditor = useCallback((e: React.ClipboardEvent<HTMLTextAreaElement>) => {
     const pastedText = e.clipboardData.getData('text/plain').trim();
     let imageUrl = pastedText;
@@ -243,13 +273,33 @@ export const EmailComposer: React.FC<EmailComposerProps> = ({
   return (
     <>
       <div className="p-4 bg-gray-900/20 border-b border-white/10 flex items-center justify-between flex-shrink-0">
-        <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Compose Email</h2>
+        <div className="flex flex-col gap-2 flex-1">
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Compose Email</h2>
+          <div className="flex items-center gap-4">
+            {isTemplateSelected ? (
+              <Input
+                className="max-w-xs text-lg font-semibold bg-gray-800 border border-white/10 rounded px-3 py-2"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                placeholder="Template Name"
+              />
+            ) : (
+              <div className="flex items-center gap-2 text-sm text-blue-400">
+                <div className="w-2 h-2 rounded-full bg-blue-400"></div>
+                <span>Creating New Template</span>
+              </div>
+            )}
+            <div className="flex items-center gap-2 text-xs text-gray-400">
+              <div className={`w-2 h-2 rounded-full ${storageInfo.isLocal ? 'bg-yellow-400' : 'bg-green-400'}`}></div>
+              <span>{storageInfo.isLocal ? 'Local Storage' : 'Vercel Blob'}</span>
+            </div>
+          </div>
+        </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={() => setPreviewModalOpen(true)}>
             <EyeIcon className="h-4 w-4 mr-2" />
             Preview
           </Button>
-          <Button variant="secondary" onClick={onSave} disabled={!isTemplateSelected}>Save Template</Button>
           <Button onClick={handleSendEmail} disabled={sendingState === 'sending'}>
             {sendingState === 'sending' ? 'Sending...' : sendingState === 'success' ? 'Sent!' : 'Send Email'}
           </Button>
@@ -314,10 +364,16 @@ export const EmailComposer: React.FC<EmailComposerProps> = ({
         <div className="flex flex-row gap-4 h-[1200px] w-full">
           <div className="w-1/2 min-w-0 flex flex-col">
             <Label htmlFor="html-body" className="text-lg font-semibold mb-2 block">HTML Editor</Label>
-            <Button variant="outline" size="sm" onClick={() => setShowImgurLibrary(true)} className="mb-2 self-end">
+            <div className="flex gap-2 mb-2 self-end">
+              <Button variant="outline" size="sm" onClick={() => setSaveModalOpen(true)}>
+                <SaveIcon className="h-4 w-4 mr-2" />
+                Save as Template
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setShowImgurLibrary(true)}>
                 <ImageIcon className="h-4 w-4 mr-2" />
                 Images
-            </Button>
+              </Button>
+            </div>
             {/* Imgur embed modal */}
             {showImgurLibrary && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setShowImgurLibrary(false)}>
@@ -360,6 +416,14 @@ export const EmailComposer: React.FC<EmailComposerProps> = ({
       <FileUploadHelpModal
         isOpen={isFileHelpModalOpen}
         onClose={() => setFileHelpModalOpen(false)}
+      />
+      <SaveTemplateModal
+        isOpen={isSaveModalOpen}
+        onClose={() => setSaveModalOpen(false)}
+        onSave={handleSaveTemplate}
+        initialName={name}
+        isLoading={isSaving}
+        isNewTemplate={!isTemplateSelected}
       />
     </>
   );

@@ -122,6 +122,101 @@ export const Sidebar: React.FC<SidebarProps> = ({ templates, activeTemplateId, o
                 </li>
             ))}
         </ul>
+        
+        {/* Additional Headers */}
+        <div className="mt-6 space-y-4">
+          <div>
+            <h3 className="text-lg font-semibold tracking-tight text-gray-200 flex items-center gap-2 mb-2">
+              <BookOpenIcon className="h-5 w-5 text-purple-400" />
+              Community Templates
+            </h3>
+            <ul className="space-y-1 text-sm ml-7">
+              <li>
+                <button className="w-full text-left px-3 py-1.5 rounded-md text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors">
+                  Your Favorites
+                </button>
+              </li>
+              <li>
+                <button className="w-full text-left px-3 py-1.5 rounded-md text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors">
+                  New
+                </button>
+              </li>
+              <li>
+                <button className="w-full text-left px-3 py-1.5 rounded-md text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors">
+                  Most Saved
+                </button>
+              </li>
+            </ul>
+          </div>
+          
+          <div>
+            <h3 className="text-lg font-semibold tracking-tight text-gray-200 flex items-center gap-2 mb-2">
+              <BookOpenIcon className="h-5 w-5 text-purple-400" />
+              HTML Tips
+            </h3>
+            <ul className="space-y-1 text-sm ml-7">
+              <li>
+                <button onClick={() => onSelectHowToTopic('countdown_timer')} className="w-full text-left px-3 py-1.5 rounded-md text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors">
+                  Countdown Timer
+                </button>
+              </li>
+              <li>
+                <button onClick={() => onSelectHowToTopic('tabs_interface')} className="w-full text-left px-3 py-1.5 rounded-md text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors">
+                  Tabs Interface
+                </button>
+              </li>
+              <li>
+                <button onClick={() => onSelectHowToTopic('accordion')} className="w-full text-left px-3 py-1.5 rounded-md text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors">
+                  Accordion
+                </button>
+              </li>
+              <li>
+                <button onClick={() => onSelectHowToTopic('modal_popup')} className="w-full text-left px-3 py-1.5 rounded-md text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors">
+                  Modal Popup
+                </button>
+              </li>
+              <li>
+                <button onClick={() => onSelectHowToTopic('image_slider')} className="w-full text-left px-3 py-1.5 rounded-md text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors">
+                  Image Slider
+                </button>
+              </li>
+              <li>
+                <button onClick={() => onSelectHowToTopic('tooltip_hover')} className="w-full text-left px-3 py-1.5 rounded-md text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors">
+                  Tooltip on Hover
+                </button>
+              </li>
+              <li>
+                <button onClick={() => onSelectHowToTopic('star_rating')} className="w-full text-left px-3 py-1.5 rounded-md text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors">
+                  Star Rating System
+                </button>
+              </li>
+              <li>
+                <button onClick={() => onSelectHowToTopic('copy_clipboard')} className="w-full text-left px-3 py-1.5 rounded-md text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors">
+                  Copy to Clipboard
+                </button>
+              </li>
+              <li>
+                <button onClick={() => onSelectHowToTopic('show_hide_password')} className="w-full text-left px-3 py-1.5 rounded-md text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors">
+                  Show/Hide Password
+                </button>
+              </li>
+              <li>
+                <button onClick={() => onSelectHowToTopic('progress_bar')} className="w-full text-left px-3 py-1.5 rounded-md text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors">
+                  Progress Bar Animation
+                </button>
+              </li>
+            </ul>
+          </div>
+          
+          <h3 className="text-lg font-semibold tracking-tight text-gray-200 flex items-center gap-2">
+            <BookOpenIcon className="h-5 w-5 text-purple-400" />
+            Schedule Send
+          </h3>
+          <h3 className="text-lg font-semibold tracking-tight text-gray-200 flex items-center gap-2">
+            <BookOpenIcon className="h-5 w-5 text-purple-400" />
+            Imgur.Com
+          </h3>
+        </div>
       </nav>
       <div className="p-4 border-t border-white/10 mt-auto">
         <p className="text-xs text-gray-500">Powered by React & Resend</p>

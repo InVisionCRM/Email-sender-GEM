@@ -84,6 +84,20 @@ Follow these instructions to get a copy of the project up and running on your lo
     ```
     The application should now be running on `http://localhost:5173` (or another port if 5173 is busy).
 
+### 📁 Storage System
+
+The app uses a smart storage system that automatically adapts to your environment:
+
+- **Local Development**: Uses browser localStorage for template persistence
+- **Production (Vercel)**: Uses Vercel Blob storage for cloud persistence
+- **Fallback**: If Vercel Blob fails, automatically falls back to localStorage
+
+You can see which storage system is active by looking at the indicator in the header:
+- 🟡 **Local Storage**: When developing locally
+- 🟢 **Vercel Blob**: When deployed to production
+
+This means you can develop and test locally without needing to deploy, and your templates will automatically sync to the cloud when you deploy to Vercel.
+
 ## 📁 Project Structure
 
 The project is organized to be clean and maintainable.

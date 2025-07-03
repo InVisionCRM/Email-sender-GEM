@@ -5,6 +5,7 @@ export const INITIAL_TEMPLATES: EmailTemplate[] = [
   {
     id: 'welcome_email',
     name: 'Welcome Email',
+    subject: 'Welcome to Our Community!',
     content: `
 <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
   <h1 style="color: #4A90E2;">Welcome Aboard!</h1>
@@ -18,6 +19,7 @@ export const INITIAL_TEMPLATES: EmailTemplate[] = [
   {
     id: 'password_reset',
     name: 'Password Reset',
+    subject: 'Reset Your Password',
     content: `
 <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
   <h1 style="color: #D0021B;">Password Reset Request</h1>
@@ -30,6 +32,7 @@ export const INITIAL_TEMPLATES: EmailTemplate[] = [
   {
     id: 'monthly_newsletter',
     name: 'Monthly Newsletter',
+    subject: 'This Month\'s Newsletter',
     content: `
 <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
   <h1 style="color: #50E3C2;">Our Monthly Update</h1>
