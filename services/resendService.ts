@@ -1,11 +1,21 @@
-import axios from 'axios';
+export async function sendEmail({ to, subject, html }: { to: string; subject: string; html: string }) {
+  try {
+    const response = await fetch('/api/send-email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ to, subject, html }),
+    });
 
-interface SendEmailParams {
-  to: string;
-  subject: string;
-  html: string;
-}
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `HTTP ${response.status}`);
+    }
 
-export async function sendEmail({ to, subject, html }: SendEmailParams): Promise<void> {
-  await axios.post('/api/send-email', { to, subject, html });
+    return await response.json();
+  } catch (error) {
+    console.error('Error sending email:', error);
+    throw error;
+  }
 } 

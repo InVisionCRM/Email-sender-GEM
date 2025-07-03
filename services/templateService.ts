@@ -1,4 +1,3 @@
-import axios from 'axios';
 import { EmailTemplate } from '../types';
 
 const STORAGE_KEY = 'email-templates';
@@ -19,101 +18,53 @@ console.log('Template Service initialized:', {
   hostname: window.location.hostname
 });
 
-export const templateService = {
-  async loadTemplates(): Promise<EmailTemplate[]> {
-    console.log('Loading templates, using localStorage:', useLocalStorage);
+export async function loadTemplates(): Promise<EmailTemplate[]> {
+  try {
+    const response = await fetch('/api/templates');
     
-    if (useLocalStorage) {
-      try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-          const templates = JSON.parse(stored);
-          console.log('Loaded templates from localStorage:', templates.length);
-          return templates;
-        } else {
-          console.log('No templates found in localStorage');
-          return [];
-        }
-      } catch (error) {
-        console.error('Error loading from localStorage:', error);
-        return [];
-      }
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `HTTP ${response.status}`);
     }
 
-    // Use Vercel Blob in production
-    try {
-      console.log('Attempting to load from Vercel Blob...');
-      const response = await axios.get('/api/templates');
-      if (response.data && response.data.templates) {
-        console.log('Loaded templates from Vercel Blob:', response.data.templates.length);
-        return response.data.templates;
-      }
-      console.log('No templates found in Vercel Blob');
-      return [];
-    } catch (error: any) {
-      console.error('Error loading from Vercel Blob:', error);
-      // Fallback to localStorage if Vercel Blob fails
-      try {
-        console.log('Falling back to localStorage...');
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-          const templates = JSON.parse(stored);
-          console.log('Fallback: Loaded templates from localStorage:', templates.length);
-          return templates;
-        }
-      } catch (localError) {
-        console.error('Error loading from localStorage fallback:', localError);
-      }
-      return [];
-    }
-  },
-
-  async saveTemplates(templates: EmailTemplate[]): Promise<void> {
-    console.log('Saving templates, using localStorage:', useLocalStorage, 'count:', templates.length);
-    
-    if (useLocalStorage) {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(templates));
-        console.log('Saved templates to localStorage:', templates.length);
-        return;
-      } catch (error) {
-        console.error('Error saving to localStorage:', error);
-        throw new Error('Failed to save templates to localStorage');
-      }
-    }
-
-    // Use Vercel Blob in production
-    try {
-      console.log('Attempting to save to Vercel Blob...');
-      const response = await axios.post('/api/templates', { templates });
-      console.log('Saved templates to Vercel Blob:', templates.length);
-      // Also save to localStorage as backup
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(templates));
-        console.log('Backup saved to localStorage');
-      } catch (localError) {
-        console.warn('Could not save backup to localStorage:', localError);
-      }
-      return;
-    } catch (error: any) {
-      console.error('Error saving to Vercel Blob:', error);
-      // Fallback to localStorage if Vercel Blob fails
-      try {
-        console.log('Falling back to localStorage...');
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(templates));
-        console.log('Fallback: Saved templates to localStorage:', templates.length);
-        return;
-      } catch (localError) {
-        console.error('Error saving to localStorage fallback:', localError);
-        throw new Error('Failed to save templates to both Vercel Blob and localStorage');
-      }
-    }
-  },
-
-  getStorageInfo(): { type: 'localStorage' | 'vercel-blob' | 'fallback'; isLocal: boolean } {
-    if (useLocalStorage) {
-      return { type: 'localStorage', isLocal: true };
-    }
-    return { type: 'vercel-blob', isLocal: false };
+    const data = await response.json();
+    return data.templates || [];
+  } catch (error) {
+    console.error('Error loading templates:', error);
+    // Fallback to localStorage
+    const stored = localStorage.getItem('emailTemplates');
+    return stored ? JSON.parse(stored) : [];
   }
-}; 
+}
+
+export async function saveTemplates(templates: EmailTemplate[]): Promise<void> {
+  try {
+    const response = await fetch('/api/templates', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ templates }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `HTTP ${response.status}`);
+    }
+
+    // Also save to localStorage as backup
+    localStorage.setItem('emailTemplates', JSON.stringify(templates));
+  } catch (error) {
+    console.error('Error saving templates:', error);
+    // Fallback to localStorage only
+    localStorage.setItem('emailTemplates', JSON.stringify(templates));
+    throw error;
+  }
+}
+
+export function getStorageInfo(): { type: 'localStorage' | 'vercel-blob' | 'fallback'; isLocal: boolean } {
+  if (useLocalStorage) {
+    return { type: 'localStorage', isLocal: true };
+  }
+  return { type: 'vercel-blob', isLocal: false };
+} 

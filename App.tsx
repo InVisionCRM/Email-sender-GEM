@@ -7,7 +7,7 @@ import { EmailTemplate } from './types';
 import { INITIAL_TEMPLATES } from './constants';
 import { toast } from './components/ui/Toaster';
 import { Button } from './components/ui/Button';
-import { templateService } from './services/templateService';
+import { loadTemplates, saveTemplates, getStorageInfo } from './services/templateService';
 
 const FooterLink = ({ href, children }: { href: string, children: React.ReactNode }) => (
   <a href={href} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-pink-400 transition-colors duration-200 text-sm">{children}</a>
@@ -28,7 +28,7 @@ function App() {
   const [activeTemplateId, setActiveTemplateId] = useState<string | null>(INITIAL_TEMPLATES[0]?.id || null);
   const [howToTopic, setHowToTopic] = useState<string | null>(null);
   const [isIntroModalOpen, setIntroModalOpen] = useState(false);
-  const [storageInfo, setStorageInfo] = useState(templateService.getStorageInfo());
+  const [storageInfo, setStorageInfo] = useState(getStorageInfo());
   
   const activeTemplate = templates.find(t => t.id === activeTemplateId) || null;
 
@@ -41,7 +41,7 @@ function App() {
     // Load templates using the template service
     async function fetchTemplates() {
       try {
-        const templates = await templateService.loadTemplates();
+        const templates = await loadTemplates();
         if (templates.length > 0) {
           // Ensure all templates have a subject field for backward compatibility
           const normalizedTemplates = templates.map(template => ({
@@ -57,7 +57,7 @@ function App() {
         }
         
         // Log storage info
-        const currentStorageInfo = templateService.getStorageInfo();
+        const currentStorageInfo = getStorageInfo();
         setStorageInfo(currentStorageInfo);
         console.log('Using storage:', currentStorageInfo);
       } catch (err: any) {
@@ -124,7 +124,7 @@ function App() {
     setTemplates(updatedTemplates);
     setName(templateName);
     try {
-      await templateService.saveTemplates(updatedTemplates);
+      await saveTemplates(updatedTemplates);
       console.log('Templates saved successfully, total count:', updatedTemplates.length);
     } catch (err: any) {
       console.error('Save error:', err);
@@ -149,7 +149,7 @@ function App() {
     setTemplates(remainingTemplates);
     
     try {
-      await templateService.saveTemplates(remainingTemplates);
+      await saveTemplates(remainingTemplates);
       toast.error(`Template "${toDelete.name}" deleted.`);
     } catch (err) {
       console.error('Error saving after delete:', err);
